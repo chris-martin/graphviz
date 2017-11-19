@@ -63,7 +63,7 @@ Library {
                            process,
                            directory,
                            temporary >=1.1 && <1.3,
-                           fgl >= 5.4 && < 5.6,
+                           fgl >= 5.4 && < 5.7,
                            filepath,
                            polyparse >=1.9 && <1.13,
                            bytestring >= 0.9 && < 0.11,
@@ -127,7 +127,7 @@ Test-Suite graphviz-testsuite {
                            fgl-arbitrary == 0.2.*,
                            filepath,
                            text,
-                           QuickCheck >= 2.3 && < 2.10
+                           QuickCheck >= 2.3 && < 2.11
 
         hs-Source-Dirs:    tests
 
@@ -145,7 +145,7 @@ Test-Suite graphviz-testsuite {
                              Data.GraphViz.Testing.Instances.Graph
 
         if True
-           Ghc-Options: -O -Wall
+           Ghc-Options: -Wall
 
         if impl(ghc >= 6.12.1)
            Ghc-Options: -fno-warn-unused-do-bind
@@ -162,14 +162,14 @@ Benchmark graphviz-printparse {
                           deepseq,
                           text,
                           graphviz,
-                          criterion >= 0.5 && < 1.2
+                          criterion >= 0.5 && < 1.3
 
         hs-Source-Dirs:   utils
 
         Main-Is:          Benchmark.hs
 
         if True
-           Ghc-Options: -O -Wall
+           Ghc-Options: -Wall
 
         if impl(ghc >= 6.12.1)
            Ghc-Options: -fno-warn-unused-do-bind
@@ -196,7 +196,7 @@ Executable graphviz-testparsing {
                           filepath,
                           text
 
-        Ghc-Options: -O -Wall
+        Ghc-Options: -Wall
 
         GHC-Prof-Options: -rtsopts
 }

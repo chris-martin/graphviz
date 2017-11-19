@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses, OverloadedStrings #-}
 
 {- |
    Module      : TestParsing
@@ -12,10 +12,10 @@
    (with the assumption that the provided code is valid).
 
 -}
-module Main where
+module Main (main) where
 
 import           Data.GraphViz
-import           Data.GraphViz.Commands.IO       (hGetStrict, toUTF8)
+import           Data.GraphViz.Commands.IO       (toUTF8)
 import           Data.GraphViz.Exception
 import           Data.GraphViz.Parsing           (runParser)
 import           Data.GraphViz.PreProcessing     (preProcess)
@@ -24,6 +24,8 @@ import qualified Data.GraphViz.Types.Generalised as G
 import           Control.Exception    (SomeException, evaluate, try)
 import           Control.Monad        (filterM, liftM)
 import qualified Data.ByteString.Lazy as B
+import           Data.Either          (either)
+import           Data.Monoid          (mappend)
 import           Data.Text.Lazy       (Text)
 import qualified Data.Text.Lazy       as T
 import           System.Directory
@@ -53,56 +55,53 @@ getDContents fp = (filterM doesFileExist . map (fp </>)) =<< getDirectoryContent
 
 -- -----------------------------------------------------------------------------
 
-
-withParse :: (PPDotRepr dg n) => (a -> IO Text) -> (dg n -> IO ())
+withParse :: (Show a, PPDotRepr dg n) => (a -> IO Text) -> (dg n -> IO ())
              -> (ErrMsg -> String) -> a -> IO ()
 withParse toStr withDG cmbErr a = do dc <- liftM getMsg . try $ toStr a
                                      case dc of
                                        Right dc' -> do edg <- tryParse dc'
                                                        case edg of
                                                          (Right dg) -> withDG dg
-                                                         (Left err) -> do putStrLn "Parsing problem!"
+                                                         (Left err) -> do putStr (show a)
+                                                                          putStrLn " - Parsing problem!"
                                                                           putStrLn $ cmbErr err
                                                                           putStrLn  ""
-                                       Left err  -> do putStrLn "IO problem!"
+                                       Left err  -> do putStr (show a)
+                                                       putStrLn " - IO problem!"
                                                        putStrLn err
                                                        putStrLn ""
   where
     getMsg :: Either SomeException Text -> Either ErrMsg Text
     getMsg = either (Left . show) Right
 
-type DG = DotGraph Text
 type GDG = G.DotGraph Text
 type ErrMsg = String
 
 tryParseFile    :: FilePath -> IO ()
-tryParseFile fp = withParse readFile'
-                            (tryParseCanon fp)
+tryParseFile fp = withParse readUTF8File
+                            ((`seq` return ()) . T.length . printDotGraph . asGDG)
                             ("Cannot parse as a G.DotGraph: "++)
                             fp
-
-tryParseCanon    :: FilePath -> GDG -> IO ()
-tryParseCanon fp = withParse prettyPrint
-                             ((`seq` putStrLn "Parsed OK!") . T.length . printDotGraph . asDG)
-                             (\ e -> fp ++ ": Canonical Form not a DotGraph:\n"
-                                     ++ e)
   where
-    asDG = flip asTypeOf emptDG
-    emptDG = DotGraph False False Nothing $ DotStmts [] [] [] [] :: DG
-    prettyPrint dg = graphvizWithHandle (commandFor dg) dg Canon hGetStrict
+    asGDG :: GDG -> GDG
+    asGDG = id
 
 tryParse    :: (PPDotRepr dg n) => Text -> IO (Either ErrMsg (dg n))
 tryParse dc = handle getErr
               $ let (dg, rst) = runParser parse $ preProcess dc
-                in T.length rst `seq` return dg
+                in T.length rst `seq` return (eitherLR (augmentErr rst) id dg)
   where
     getErr :: SomeException -> IO (Either ErrMsg a)
     getErr = return . Left . show
 
-readFile' :: FilePath -> IO Text
-readFile' fp = do putStr fp
-                  putStr " - "
-                  readUTF8File fp
+    augmentErr rst err = err ++ "\n\tRemaining input: " ++ show res
+      where
+        sampleLen = 35
+
+        res | T.length rst <= sampleLen = rst
+            | otherwise                 = T.take sampleLen rst `mappend` " ..."
+
+    eitherLR f g = either (Left . f) (Right . g)
 
 -- Force any encoding errors into the IO section rather than when parsing.
 readUTF8File    :: FilePath -> IO Text

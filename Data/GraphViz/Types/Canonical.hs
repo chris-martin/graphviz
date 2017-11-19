@@ -32,11 +32,11 @@
    >          , graphID = Just (Str "G")
    >          , graphStatements = DotStmts { attrStmts = []
    >                                       , subGraphs = [ DotSG { isCluster = True
-   >                                                             , subGraphID = Just (Int 0)
+   >                                                             , subGraphID = Just (Num (Int 0))
    >                                                             , subGraphStmts = DotStmts { attrStmts = [ GraphAttrs [ style filled
    >                                                                                                                   , color LightGray
    >                                                                                                                   , textLabel "process #1"]
-   >                                                                                                      , NodeAttrs [style filled, color White]]}
+   >                                                                                                      , NodeAttrs [style filled, color White]]
    >                                                                                        , subGraphs = []
    >                                                                                        , nodeStmts = [ DotNode "a0" []
    >                                                                                                      , DotNode "a1" []
@@ -47,7 +47,7 @@
    >                                                                                                      , DotEdge "a2" "a3" []
    >                                                                                                      , DotEdge "a3" "a0" []]}}
    >                                                     , DotSG { isCluster = True
-   >                                                             , subGraphID = Just (Int 1)
+   >                                                             , subGraphID = Just (Num (Int 1))
    >                                                             , subGraphStmts = DotStmts { attrStmts = [ GraphAttrs [textLabel "process #2", color Blue]
    >                                                                                                      , NodeAttrs [style filled]]
    >                                                                                        , subGraphs = []
